@@ -70,7 +70,7 @@ class Check(Thread):
             if self.copy_when_finished:
                 copy = Copy(self.id_dcp)
 
-        except Exception as e:
+        except TdcpbException as e:
             dcp.check_result = "Fail"
             dcp.check_err = " ".join([e.message, e.filename, e.strerror])
             db.session.commit()

@@ -1,24 +1,18 @@
 # -*- coding:utf-8 -*-
 from flask import render_template, request, make_response, Response, jsonify
 from flask_restful import Resource, reqparse, fields, marshal_with
-from flask_nav import Nav
 from flask_nav.elements import Navbar, View
-from __init__ import app, db, api
-from tdcpblib.common import TdcpbException
+from __init__ import app, db, api, nav
 from DCP_data import DCP_data
-from threads import Check,Copy
+from Movie_data import Movie_data
+from threads import Check
 
-db.create_all()
 
-nav = Nav()
 @nav.navigation()
 def mynavbar():
-    return Navbar(u"IngestDCP",View(u"Accueil",u"index"))
+    return Navbar(u"IngestDCP",View(u"Dcps",u"dcps"))
 nav.register_element(u"top",mynavbar)
 
-@app.route(u"/")
-def index():
-    return render_template(u"view_skeleton.html")
 
 
 @api.representation(u"text/html")
@@ -38,9 +32,16 @@ def output_html(data,code,headers=None):
 #     DCPs = db.session.query(DCP_data).all()
 #     return render_template("dcps.html",DCPs=DCPs)
 
+movie_fields = {
+    u"id": fields.Integer,
+    u"title": fields.String,
+    u"original_title": fields.String
+}
 DCP_fields = {
     u"id": fields.Integer,
-    u"movie": fields.String,
+    u"movie": fields.Nested(movie_fields),
+    u"source_directory": fields.String,
+    u"target_directory": fields.String,
     u"copy_result": fields.String,
     u"copy_err": fields.String,
     u"check_result": fields.String,
@@ -62,8 +63,9 @@ class DCPList(Resource):
         print(request.form)
         data = self.reqparse.parse_args()
         print(data)
-        movie = data[u"movie"]
+        movie_title = data[u"movie"]
         source_directory = data[u"source_directory"]
+        movie = Movie_data(title = movie_title)
         dcp = DCP_data(movie=movie, source_directory=source_directory)
         db.session.add(dcp)
         db.session.commit()
@@ -85,9 +87,16 @@ class DCP(Resource):
         dcp = DCP_data.query.filter_by(id=id_dcp).first()
         return dcp
 
-api.add_resource(DCP,u"/dcps/<int:id_dcp>/")
-api.add_resource(DCPList,u"/dcps/")
+
+def main(testing=False):
+    api.add_resource(DCP,u"/dcps/<int:id_dcp>/")
+    api.add_resource(DCPList,u"/dcps/", endpoint="dcps")
+    nav.init_app(app)
+    if testing:
+        app.config[u"SQLALCHEMY_DATABASE_URI"]=u"sqlite:///:memory:"
+        db.init_app(app)
+    db.create_all()
+    app.run(debug=True)
 
 if __name__ == u"__main__":
-    nav.init_app(app)
-    app.run(debug=True)
+    main(True)

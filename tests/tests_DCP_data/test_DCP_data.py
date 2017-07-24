@@ -2,7 +2,7 @@
 import unittest
 from flask_testing import TestCase
 from flask import Flask
-from __init__ import db, app
+from __init__ import db
 from DCP_data import DCP_data
 from Movie_data import Movie_data
 
@@ -71,5 +71,5 @@ class TestDCP_data(TestCase):
         db.session.remove()
         db.drop_all()
 
-if __name__ == "__main__":
+if __name__ == u"__main__":
     unittest.main()
