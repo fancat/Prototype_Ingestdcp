@@ -6,6 +6,8 @@ from __init__ import app, db, api, nav
 from DCP_data import DCP_data
 from Movie_data import Movie_data
 from threads import Check
+from form_new_dcp import new
+
 
 
 @nav.navigation()
@@ -59,6 +61,7 @@ class DCPList(Resource):
         super(DCPList, self).__init__()
 
 
+    @marshal_with(DCP_fields,u"dcps")
     def post(self):
         print(request.form)
         data = self.reqparse.parse_args()
@@ -72,7 +75,9 @@ class DCPList(Resource):
 
         c = Check(dcp.id)
         c.start()
-        return {u"result":u"OK",u"message":u"Le DCP a bien été créé"}
+        # return {u"result":u"OK",u"message":u"Le DCP a bien été créé"}
+        dcps = db.session.query(DCP_data).all()
+        return dcps
 
     @marshal_with(DCP_fields,u"dcps")
     def get(self):
@@ -89,7 +94,7 @@ class DCP(Resource):
 
 
 def main(testing=False):
-    api.add_resource(DCP,u"/dcps/<int:id_dcp>/")
+    api.add_resource(DCP,u"/dcps/<int:id_dcp>/", endpoint="dcp")
     api.add_resource(DCPList,u"/dcps/", endpoint="dcps")
     nav.init_app(app)
     if testing:
@@ -99,4 +104,4 @@ def main(testing=False):
     app.run(debug=True)
 
 if __name__ == u"__main__":
-    main(True)
+    main()

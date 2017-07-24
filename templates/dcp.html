@@ -2,53 +2,46 @@
 {% block title %}DCP{% endblock %}
 
 
-{% block content %}
-<div class="container theme-showcase" role="main">
-
-    <div class="page-header">
-        <h1>Prototype flask restful</h1>
-        <h2>DCP : {{data.source_directory}}</h2>
-        <div class="panel-group">
-            <div class="panel panel-default">
-                <div class="panel-heading">Id</div>
-                <div class="panel-body"><p>{{data.id}}</p></div>
-            </div>
-            <div class="panel panel-default">
-                <div class="panel-heading">Movie</div>
-                <div class="panel-body"><p>{{data.movie.title}}</p></div>
-            </div>
-            <div class="panel panel-default">
-                <div class="panel-heading">Check</div>
-                <div class="panel-body">
-                    <p>{{data.check_result}}</p>
-                    {% if data.check_err %}
-                    <p>{{data.check_err}}</p>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="panel panel-default">
-                <div class="panel-heading">Copy</div>
-                <div class="panel-body">
-                    {% if data.copy_err %}
-                    <a data-toggle="collapse" href="#copy_err">{{data.copy_result}}</a>
-                    <p id="copy_err" class="collapse">{{data.copy_err}}</p>
-                    {% else %}
-                    <p>{{data.copy_result}}</p>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="panel panel-default">
-                <div class="panel-heading">Hash check</div>
-                <div class="panel-body">
-                    <p>{{data.check_hash_result}}</p>
-                    {% if data.check_hash_err %}
-                    <p>{{data.check_hash_err}}</p>
-                    {% endif %}
-                </div>
-            </div>
-
+{% block main %}
+<h2>DCP : {{data.source_directory}}</h2>
+<div class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-heading">Id</div>
+        <div class="panel-body"><p>{{data.id}}</p></div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">Movie</div>
+        <div class="panel-body"><p>{{data.movie.title}}</p></div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">Check</div>
+        <div class="panel-body">
+            <p>{{data.check_result}}</p>
+            {% if data.check_err %}
+            <p>{{data.check_err}}</p>
+            {% endif %}
         </div>
     </div>
-</div>
+    <div class="panel panel-default">
+        <div class="panel-heading">Copy</div>
+        <div class="panel-body">
+            {% if data.copy_err %}
+            <a data-toggle="collapse" href="#copy_err">{{data.copy_result}}</a>
+            <p id="copy_err" class="collapse">{{data.copy_err}}</p>
+            {% else %}
+            <p>{{data.copy_result}}</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">Hash check</div>
+        <div class="panel-body">
+            <p>{{data.check_hash_result}}</p>
+            {% if data.check_hash_err %}
+            <p>{{data.check_hash_err}}</p>
+            {% endif %}
+        </div>
+    </div>
+
 </div>
 {% endblock %}

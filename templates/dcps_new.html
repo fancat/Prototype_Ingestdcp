@@ -1,0 +1,24 @@
+{% extends "view_skeleton.html" %}
+{% block title %}Add a DCP{% endblock %}
+
+{% block main %}
+<div class="row">
+    <h2 class="pull-left vcenter">Add a DCP</h2>
+    <a class="btn btn-primary pull-right" style="vertical-align: baseline" href="{{url_for('dcps')}}">
+        <span class="glyphicon glyphicon-menu-left"></span>Cancel</a>
+</div>
+
+<div class="row">
+    <form method="POST" action="/dcps/new/">
+        {{form.hidden_tag()}}
+        <div class="form-group">
+            {{form.source_directory.label}}{{form.source_directory(class_="form-control")}}
+        </div>
+        <div class="form-group">
+            {{form.movie.label}}{{form.movie(class_="form-control")}}
+        </div>
+        <input type="submit" value="Ok">
+    </form>
+</div>
+
+{% endblock %}

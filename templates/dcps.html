@@ -2,50 +2,55 @@
 {% block title %}DCPs{% endblock %}
 
 
-{% block content %}
-<div class="container theme-showcase" role="main">
+{% block main %}
+<h2 class="pull-left">DCPs</h2>
+<a href="{{url_for('new')}}" class="btn btn-primary pull-right">
+    <span class="glyphicon glyphicon-plus"></span>New DCP
+</a>
+<table class="table-hover table table-responsive">
+    <tr>
+        <th>
+            Id
+        </th>
+        <th>
+            Movie
+        </th>
+        <th>
+            Check result
+        </th>
+        <th>
+            Copy result
+        </th>
+        <th>
+            Hash check result
+        </th>
+        <th>
 
-  <div class="page-header">
-    <h1>Prototype flask restful</h1>
-    <h2>DCPs</h2>
-      <table class="table-hover table table-responsive">
-          <tr>
-              <th>
-                  Id
-              </th>
-              <th>
-                  Movie
-              </th>
-              <th>
-                  Check result
-              </th>
-              <th>
-                  Copy result
-              </th>
-              <th>
-                  Hash check result
-              </th>
-          </tr>
-          {% for dcp in data %}
-          <tr>
-              <td>
-                  {{dcp["id"]}}
-              </td>
-              <td>
-                  {{dcp.movie.title}}
-              </td>
-              <td>
-                  {{dcp.check_result}}
-              </td>
-              <td>
-                  {{dcp.copy_result}}
-              </td>
-              <td>
-                  {{dcp.check_hash_result}}
-              </td>
-          </tr>
-          {% endfor %}
-      </table>
-  </div>
-</div>
+        </th>
+    </tr>
+    {% for dcp in data %}
+    <tr>
+        <td>
+            {{dcp.id}}
+        </td>
+        <td>
+            {{dcp.movie.title}}
+        </td>
+        <td>
+            {{dcp.check_result}}
+        </td>
+        <td>
+            {{dcp.copy_result}}
+        </td>
+        <td>
+            {{dcp.check_hash_result}}
+        </td>
+        <td>
+            <a href="{{url_for('dcp',id_dcp=dcp.id)}}">
+                <span class="glyphicon glyphicon-eye-open"></span>Details
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
 {% endblock %}
