@@ -5,7 +5,7 @@
 {% block main %}
 <h2 class="pull-left">DCPs</h2>
 <a href="{{url_for('new')}}" class="btn btn-primary pull-right">
-    <span class="glyphicon glyphicon-plus"></span>New DCP
+    <span class="glyphicon glyphicon-plus"></span> New DCP
 </a>
 <table class="table-hover table table-responsive">
     <tr>
@@ -13,16 +13,22 @@
             Id
         </th>
         <th>
+            Name
+        </th>
+        <th>
             Movie
         </th>
         <th>
-            Check result
+            Check
         </th>
         <th>
-            Copy result
+            Copy
         </th>
         <th>
-            Hash check result
+            Hash check
+        </th>
+        <th>
+            Torrent
         </th>
         <th>
 
@@ -32,6 +38,9 @@
     <tr>
         <td>
             {{dcp.id}}
+        </td>
+        <td>
+            {{dcp.dcp_name}}
         </td>
         <td>
             {{dcp.movie.title}}
@@ -46,8 +55,11 @@
             {{dcp.check_hash_result}}
         </td>
         <td>
+            {{dcp.torrent_result}}
+        </td>
+        <td>
             <a href="{{url_for('dcp',id_dcp=dcp.id)}}">
-                <span class="glyphicon glyphicon-eye-open"></span>Details
+                <span class="glyphicon glyphicon-eye-open"></span> Details
             </a>
         </td>
     </tr>

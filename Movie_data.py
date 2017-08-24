@@ -5,7 +5,7 @@ class Movie_data(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     title = db.Column(db.String(80))
     original_title = db.Column(db.String(80))
-    release_date = db.Column(db.DateTime)
+    release_date = db.Column(db.Date)
     description = db.Column(db.Text)
     category = db.Column(db.String(10))
 

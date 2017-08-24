@@ -3,45 +3,46 @@
 
 
 {% block main %}
-<h2>DCP : {{data.source_directory}}</h2>
-<div class="panel-group">
-    <div class="panel panel-default">
-        <div class="panel-heading">Id</div>
-        <div class="panel-body"><p>{{data.id}}</p></div>
-    </div>
-    <div class="panel panel-default">
-        <div class="panel-heading">Movie</div>
-        <div class="panel-body"><p>{{data.movie.title}}</p></div>
-    </div>
-    <div class="panel panel-default">
-        <div class="panel-heading">Check</div>
-        <div class="panel-body">
-            <p>{{data.check_result}}</p>
-            {% if data.check_err %}
-            <p>{{data.check_err}}</p>
-            {% endif %}
-        </div>
-    </div>
-    <div class="panel panel-default">
-        <div class="panel-heading">Copy</div>
-        <div class="panel-body">
-            {% if data.copy_err %}
-            <a data-toggle="collapse" href="#copy_err">{{data.copy_result}}</a>
-            <p id="copy_err" class="collapse">{{data.copy_err}}</p>
-            {% else %}
-            <p>{{data.copy_result}}</p>
-            {% endif %}
-        </div>
-    </div>
-    <div class="panel panel-default">
-        <div class="panel-heading">Hash check</div>
-        <div class="panel-body">
-            <p>{{data.check_hash_result}}</p>
-            {% if data.check_hash_err %}
-            <p>{{data.check_hash_err}}</p>
-            {% endif %}
-        </div>
-    </div>
-
-</div>
+<h2 class="pull-left">DCP<small> : {{data.dcp_name}}</small> </h2>
+<table class="table table-responsive table-hover">
+    <caption></caption>
+    {{dcp_attribut("Id",data.id)}}
+    {{dcp_link_attribut("Movie",data.movie.title,url_for("movie", id_movie=data.movie.id))}}
+    {{dcp_attribut("Source directory",data.source_directory)}}
+    {{dcp_attribut("Target directory",data.target_directory)}}
+    {{dcp_check_attribut("Check",data.check_result,data.check_err)}}
+    {{dcp_check_attribut("Copy",data.copy_result,data.copy_err)}}
+    {{dcp_check_attribut("Hash check",data.check_hash_result,data.check_hash_err)}}
+    {{dcp_check_attribut("Torrent created",data.torrent_result,data.torrent_err)}}
+</table>
 {% endblock %}
+
+
+
+{% macro dcp_attribut(name_attrib,  val_attrib) %}
+<tr>
+    <th class="col-md-2"> {{name_attrib}}</th>
+    <td class="col-md-10">{{val_attrib}}</td>
+</tr>
+{% endmacro %}
+
+{% macro dcp_link_attribut(name_attrib,  val_attrib, val_href) %}
+<tr>
+    <th class="col-md-2"> {{name_attrib}}</th>
+    <td class="col-md-10"><a href="{{val_href}}">{{val_attrib}}</a></td>
+</tr>
+{% endmacro %}
+
+{% macro dcp_check_attribut(name_attrib, val_attrib,err_message=None) %}
+<tr>
+    <th class="col-md-2"> {{name_attrib}}</th>
+    <td class="col-md-10">
+        {% if err_message %}
+        <a data-toggle="collapse" href="#{{name_attrib|replace(' ','_')|lower}}_err">{{val_attrib}}</a>
+        <p id="{{name_attrib|replace(' ','_')|lower}}_err" class="collapse">{{err_message}}</p>
+        {% else %}
+        <p>{{val_attrib}}</p>
+        {% endif %}
+        </td>
+</tr>
+{% endmacro %}

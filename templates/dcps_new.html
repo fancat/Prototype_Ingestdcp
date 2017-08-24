@@ -1,6 +1,25 @@
 {% extends "view_skeleton.html" %}
 {% block title %}Add a DCP{% endblock %}
 
+{% block styles %}
+    {{super()}}
+    <link rel="stylesheet" type="text/css" href="{{url_for('.static', filename='css/bootstrap-datepicker.min.css')}}" />
+    <link rel="stylesheet" type="text/css" href="{{url_for('.static', filename='css/select2.min.css')}}" />
+    <link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css" />
+{% endblock %}
+
+{% block scripts %}
+    {{super()}}
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <!--<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>-->
+    <script src="{{url_for('.static', filename='js/dcps_new.js')}}"></script>
+    <script src="{{url_for('.static', filename='js/bootstrap-datepicker.min.js')}}"></script>
+    <script src="{{url_for('.static', filename='js/bootstrap-datepicker.fr.min.js')}}"></script>
+    <script src="{{url_for('.static', filename='js/select2.min.js')}}"></script>
+    <script src="{{url_for('.static', filename='js/i18n/fr.js')}}"></script>
+
+{% endblock %}
+
 {% block main %}
 <div class="row">
     <h2 class="pull-left vcenter">Add a DCP</h2>
@@ -9,16 +28,63 @@
 </div>
 
 <div class="row">
-    <form method="POST" action="/dcps/new/">
+    <form class="form-horizontal" method="POST" action="/dcps/new/" id="form_dcp">
         {{form.hidden_tag()}}
         <div class="form-group">
-            {{form.source_directory.label}}{{form.source_directory(class_="form-control")}}
+            {{form.source_dcp_path.label(class_="col-sm-1")}}<div class="col-sm-11">{{form.source_dcp_path(class_="form-control")}}</div>
         </div>
-        <div class="form-group">
-            {{form.movie.label}}{{form.movie(class_="form-control")}}
+        <div class="panel-group" id="movie_group">
+            <div class="panel panel-primary" id="select_movie_panel">
+                <div class="panel-heading">
+                    <h4 class="panel-title">
+                        <a id="select_movie" data-toggle="collapse" data-parent="#movie_group" href="#select_movie_body" class="is_new_movie_grp">Select a movie</a>
+
+                    </h4>
+                </div>
+                <div class="panel-collapse collapse in" id="select_movie_body">
+                    <div class="panel-body">
+                        <!--<div class="form-group has-feedback">-->
+                            <!--<input class="form-control" form="form_search" id="movie_search" type="search" placeholder="Search a movie">-->
+                            <!--<span class='glyphicon glyphicon-search form-control-feedback'></span>-->
+
+                        <!--</div>-->
+                        <div class="form-group">
+                            {{form.movie_id.label(class_="col-sm-1")}}<div class="col-sm-11">{{form.movie_id(class_="form-control")}}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel panel-default" id="new_movie_panel">
+                <div class="panel-heading">
+                    <h4 class="panel-title">
+                        <a data-toggle="collapse" data-parent="#movie_group" href="#new_movie_body" id="new_movie" class="is_new_movie_grp">New movie</a>
+
+                    </h4>
+                </div>
+                <div class="panel-collapse collapse" id="new_movie_body">
+                    <div class="panel-body">
+                        <div class="form-group">
+                            {{form.movie_title.label(class_="col-sm-1")}} <div class="col-sm-11"> {{form.movie_title(class_="form-control")}}</div>
+                        </div>
+                        <div class="form-group">
+                            {{form.movie_original_title.label(class_="col-sm-1")}}<div class="col-sm-11"> {{form.movie_original_title(class_="form-control")}}</div>
+                        </div>
+                        <div class="form-group">
+                            {{form.movie_date.label(class_="col-sm-1")}}<div class="col-sm-11"> {{form.movie_date(class_="form-control")}}</div>
+                        </div>
+                        <div class="form-group">
+                            {{form.movie_category.label(class_="col-sm-1")}}<div class="col-sm-11"> {{form.movie_category(class_="form-control")}}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <input type="submit" value="Ok">
+        <input class="col-sm-2 btn btn-primary" type="submit" value="Ok" id="dcp_submit">
+
+
+
     </form>
 </div>
+
 
 {% endblock %}
