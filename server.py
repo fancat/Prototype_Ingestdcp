@@ -1,13 +1,14 @@
 # -*- coding:utf-8 -*-
-from flask import render_template, request, make_response, Response, jsonify, redirect, flash
-from flask_restful import Resource, reqparse, fields, marshal_with, abort
+from flask import render_template, request, make_response, Response, jsonify, redirect, flash, send_file, url_for
+from flask_restful import Resource, reqparse, fields, marshal_with, marshal, abort
 from flask_nav.elements import Navbar, View
 from __init__ import app, db, api, nav
 from DCP_data import DCP_data
 from Movie_data import Movie_data
-from threads import Check
+from threads import Check, CreateTorrent, HashCheck, Copy, PATH_TORRENTS
 from form_new_dcp import new
-from autocompletion import movies_autocomp
+from form_edit_dcp import edit
+# from autocompletion import movies_autocomp
 import os
 import datetime
 
@@ -22,8 +23,16 @@ nav.register_element(u"top",mynavbar)
 
 @api.representation(u"text/html")
 def output_html(data,code,headers=None):
+    if code == 400:
+        flash(data[u"message"],u"danger")
+        arguments = data.copy()
+        del arguments[u"message"]
+        del arguments[u"html_page"]
+        return redirect(url_for(data[u"html_page"], **arguments))
     data = data.popitem()
     page = u"{}.html".format(data[0])
+    if type(data[1]) != list:
+        flash(data[1][u"message"], u"success")
     return make_response(render_template(page,data=data[1]), code, headers)
 
 @api.representation(u"application/json")
@@ -68,8 +77,11 @@ DCP_fields = {
     u"check_hash_result": fields.String,
     u"check_hash_err": fields.String,
     u"torrent_result": fields.String,
-    u"torrent_err": fields.String
+    u"torrent_err": fields.String,
+    u"message": fields.String
 }
+
+
 
 
 class DCPList(Resource):
@@ -95,11 +107,13 @@ class DCPList(Resource):
 
 
     # POST : Create a dcp
-    @marshal_with(DCP_fields,u"dcps")
+    @marshal_with(DCP_fields,u"dcp")
     def post(self):
         data = self.reqparse_base.parse_args()
         source_directory = os.path.dirname(data[u"source_dcp_path"])
         dcp_name = os.path.basename(data[u"source_dcp_path"])
+        if not dcp_name:
+            abort(400, message=u"DCP can't be unnamed", html_page=u"dcps")
         if data[u"is_new_movie"] == u"true":
             # If we make a new movie
             data = self.reqparse_new.parse_args()
@@ -110,31 +124,32 @@ class DCPList(Resource):
                 try:
                     movie.release_date = datetime.datetime.strptime(data[u"movie_date"],u"%Y-%m-%d")
                 except ValueError:
-                    abort(400, message=u"Release date not well formatted (must match 'yyyy-mm-dd')")
+                    abort(400, message=u"Release date not well formatted (must match 'yyyy-mm-dd')", html_page=u"dcps")
             if data[u"movie_category"] in [u"Long", u"Short", u"Trailer"]:
                 movie.category = data[u"movie_category"]
             else:
-                abort(400, message=u"Category is not valid (must be 'Long', 'Short' or 'Trailer')")
+                abort(400, message=u"Category is not valid (must be 'Long', 'Short' or 'Trailer')", html_page=u"dcps")
         else:
             # If we select an existing movie
             data = self.reqparse_select.parse_args()
             movie = db.session.query(Movie_data).filter_by(id=data[u"movie_id"]).first()
             if not movie:
-                abort(400, message=u"Movie with id={} does no longer exist")
+                abort(400, message=u"Movie with id={} does no longer exist", html_page=u"dcps")
         dcp = DCP_data(movie=movie, source_directory=source_directory, dcp_name=dcp_name)
         db.session.add(dcp)
         db.session.commit()
 
         c = Check(dcp.id)
         c.start()
-        dcps = db.session.query(DCP_data).all()
-        return dcps
+
+        dcp.message = u"DCP created"
+        return dcp
 
     # GET : View all dcps
-    @marshal_with(DCP_fields,u"dcps")
+    # @marshal_with(DCP_fields,u"dcps")
     def get(self):
         dcps = db.session.query(DCP_data).all()
-        return dcps
+        return marshal(dcps, DCP_fields, envelope=u"dcps"), 200
 
 
 
@@ -145,6 +160,8 @@ class DCP(Resource):
         self.reqparse_edit.add_argument(u"source_directory",type=str, location=u"form")
         self.reqparse_edit.add_argument(u"target_directory", type=str, location=u"form")
         self.reqparse_edit.add_argument(u"movie_id", type=int, help=u"movie_id is not an int", location=u"form")
+
+        self.reqparse_edit.add_argument(u"check", type=str, location=u"form")
         super(DCP, self).__init__()
 
     # GET : View a dcp
@@ -161,13 +178,31 @@ class DCP(Resource):
         if data.get(u"movie_id"):
             movie = db.session.query(Movie_data).filter_by(id=data[u"movie_id"]).first()
             if not movie:
-                abort(400, message=u"Movie with id={} does not exist".format(data.get(u"movie_id")))
+                abort(400, message=u"Movie with id={} does not exist".format(data.get(u"movie_id")), html_page=u"dcp", id_dcp=id_dcp)
             dcp.movie = movie
             del data[u"movie_id"]
         # Assign all remaining attrib
         for arg, val in data.items():
             if val:
                 dcp.__setattr__(arg,val)
+
+        # Reexecute checks
+        if data.get(u"check"):
+            if data[u"check"] == u"create_torrent":
+                ct = CreateTorrent(id_dcp)
+                ct.start()
+            elif data[u"check"] == u"short_check":
+                sc = Check(id_dcp, False)
+                sc.start()
+            elif data[u"check"] == u"hash_check":
+                ht = HashCheck(id_dcp, False)
+                ht.start()
+            elif data[u"check"] == u"copy":
+                cp = Copy(id_dcp, False)
+                cp.start()
+            else:
+                abort(400, message=u"Check is not valid (must be: 'copy', 'short_check', 'hash_check' or 'create_torrent')", html_page=u"dcp", id_dcp=id_dcp)
+
         db.session.commit()
         return dcp
 
@@ -176,7 +211,7 @@ class DCP(Resource):
     def delete(self, id_dcp):
         dcp = db.session.query(DCP_data).filter_by(id=id_dcp).first()
         if not dcp:
-            abort(400, message=u"DCP with id={} does not exist".format(id_dcp))
+            abort(400, message=u"DCP with id={} does not exist".format(id_dcp), html_page=u"dcps")
         name = dcp.dcp_name
         db.session.delete(dcp)
         db.session.commit()
@@ -212,16 +247,16 @@ class MovieList(Resource):
             try:
                 movie.release_date = datetime.datetime.strptime(data[u"release_date"],u"%Y-%m-%d")
             except ValueError:
-                abort(400, message=u"Release date not well formatted (must match 'yyyy-mm-dd')")
+                abort(400, message=u"Release date not well formatted (must match 'yyyy-mm-dd')", html_page=u"dcps")
         if data[u"category"] in [u"Long", u"Short", u"Trailer"]:
             movie.category = data[u"category"]
         else:
-            abort(400, message=u"Category is not valid (must be 'Long', 'Short' or 'Trailer')")
+            abort(400, message=u"Category is not valid (must be: 'Long', 'Short' or 'Trailer')", html_page=u"dcps")
         if data.get(u"dcps_id"):
             for dcp_id in data.get(u"dcps_id"):
                 dcp = db.session.query(DCP_data).filter_by(id=dcp_id).first()
                 if not dcp:
-                    abort(400, message=u"DCP with id={} does not exist".format(dcp_id))
+                    abort(400, message=u"DCP with id={} does not exist".format(dcp_id), html_page=u"dcps")
                 movie.dcps.append(dcp)
         db.session.commit()
         movies = db.session.query(Movie_data).all()
@@ -253,20 +288,20 @@ class Movie(Resource):
         if data.get(u"add_dcp"):
             dcp = db.session.query(DCP_data).filter_by(id=data[u"add_dcp"]).first()
             if not dcp:
-                abort(400, message=u"DCP with id={} does not exist".format(data.get(u"add_dcp")))
+                abort(400, message=u"DCP with id={} does not exist".format(data.get(u"add_dcp")), html_page=u"movie", id_movie=id_movie)
             movie.dcp.append(dcp)
             del data[u"add_dcp"]
         if data.get(u"remove_dcp"):
             dcp = db.session.query(DCP_data).filter_by(id=data[u"remove_dcp"]).first()
             if not dcp:
-                abort(400, message=u"DCP with id={} does not exist".format(data.get(u"remove_dcp")))
+                abort(400, message=u"DCP with id={} does not exist".format(data.get(u"remove_dcp")), html_page=u"movie", id_movie=id_movie)
             movie.dcp.remove(dcp)
             del data[u"remove_dcp"]
         if data.get(u"release_date"):
             try:
                 movie.release_date = datetime.datetime.strptime(data[u"movie_date"], u"%Y-%m-%d")
             except ValueError:
-                abort(400, message=u"Release date not well formatted (must match 'yyyy-mm-dd')")
+                abort(400, message=u"Release date not well formatted (must match 'yyyy-mm-dd')", html_page=u"movie", id_movie=id_movie)
             del data[u"release_date"]
         # Assign all remaining attrib
         for arg, val in data.items():
@@ -280,7 +315,7 @@ class Movie(Resource):
     def delete(self, id_movie):
         movie = db.session.query(DCP_data).filter_by(id=id_movie).first()
         if not movie:
-            abort(400, message=u"Movie with id={} does not exist".format(id_movie))
+            abort(400, message=u"Movie with id={} does not exist".format(id_movie), html_page=u"movies")
         title = movie.title
         db.session.delete(title)
         db.session.commit()
@@ -292,6 +327,18 @@ class Movie(Resource):
 def index():
     return redirect(u"dcps")
 
+@app.route(u"/dcps/<id_dcp>/torrent/")
+def download_torrent(id_dcp):
+    dcp = db.session.query(DCP_data).filter_by(id=id_dcp).first()
+    path = dcp.get_torrent_path()
+    if not path:
+        flash(u"Torrent directory does not exist for DCP {}".format(dcp.dcp_name), u"danger")
+        abort(404, message=u"The torrent file doesn't exist yet for this DCP")
+    elif not os.path.isfile(path):
+        flash(u"Torrent {} does not exist".format(path), u"danger")
+        abort(404, message=u"The torrent file doesn't exist yet for this DCP")
+    else:  # si le fichier existe
+        return send_file(path, as_attachment=True)  # on l'envoie
 
 def main(testing=False):
     api.add_resource(DCP,u"/dcps/<int:id_dcp>/", endpoint="dcp")
@@ -303,7 +350,7 @@ def main(testing=False):
         app.config[u"SQLALCHEMY_DATABASE_URI"]=u"sqlite:///:memory:"
         db.init_app(app)
     db.create_all()
-    app.run(debug=True)
+    app.run(debug=True,threaded=True)
 
 if __name__ == u"__main__":
     main()
